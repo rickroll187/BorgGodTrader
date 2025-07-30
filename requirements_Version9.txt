@@ -1,0 +1,6 @@
+streamlit
+pandas
+numpy
+scikit-learn
+requests
+# ...add any others you use!
