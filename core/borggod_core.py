@@ -1,4 +1,6 @@
 import logging
+import os
+
 from services.execution.cex_executor import CEXExecutor
 from services.execution.defi_executor import DeFiExecutor
 from services.execution.kraken_executor import KrakenExecutor
@@ -26,10 +28,11 @@ from services.margin.liquidation_monitor import LiquidationMonitor
 from services.chains.chain_registry import ChainRegistry
 
 class BorgGodCore:
-    def __init__(self, config):
-        import os
-        import dotenv
-        dotenv.load_dotenv()
+    def __init__(self, config=None):
+        config = config or {}
+        from dotenv import load_dotenv
+
+        load_dotenv()
         self.config = config
 
         # Core credentials and services
@@ -51,7 +54,10 @@ class BorgGodCore:
         # Trading executors
         self.trade_logger = TradeLogger(log_file="trade_log.txt")
         self.defi_executor = DeFiExecutor(
-            self.chain_registry, self.private_key, self.wallet_address, logger=self.trade_logger
+            self.chain_registry.get_default_rpc() if hasattr(self.chain_registry, "get_default_rpc") else self.rpc_url,
+            self.private_key,
+            self.wallet_address,
+            logger=self.trade_logger,
         )
         self.cex_executor = CEXExecutor(self.cex_api_key, self.cex_api_secret, logger=self.trade_logger)
         self.kraken_executor = KrakenExecutor(self.kraken_api_key, self.kraken_api_secret, logger=self.trade_logger)
@@ -67,8 +73,8 @@ class BorgGodCore:
         self.model_ensembler = ModelEnsembler({})
         self.ml_manager = AdvancedMLManager()
         self.auto_strategy_gen = AutoStrategyGenerator(
-            backtester=self.strategy_manager.backtester,
-            strategy_templates=self.strategy_manager.strategy_templates
+            backtester=getattr(self.strategy_manager, "backtester", None),
+            strategy_templates=getattr(self.strategy_manager, "strategy_templates", {}),
         )
         self.smart_order_router = SmartOrderRouter({
             "cex": self.cex_executor,
@@ -81,7 +87,11 @@ class BorgGodCore:
         self.plugin_loader = PluginLoader()
         self.plugin_loader.load_plugins()
         self.audit_logger = AuditLogger()
-        self.allowance_auditor = AllowanceAuditor(self.rpc_url, self.wallet_address, self.tokeninfo_service.erc20_abi)
+        self.allowance_auditor = AllowanceAuditor(
+            self.rpc_url,
+            self.wallet_address,
+            getattr(self.tokeninfo_service, "erc20_abi", None),
+        )
 
         # Margin and risk
         self.interest_tracker = InterestTracker()
@@ -92,7 +102,7 @@ class BorgGodCore:
             threshold=1.15,
             poll_interval=30,
             on_liquidation_risk=self._auto_liq_callback,
-            dashboard_callback=self._dashboard_liq_callback
+            dashboard_callback=self._dashboard_liq_callback,
         )
         self.liquidation_monitor.daemon = True
         self.liquidation_monitor.start()
@@ -143,5 +153,8 @@ class BorgGodCore:
             "interest_tracker": self.interest_tracker,
             "liquidation_monitor": self.liquidation_monitor,
             "chain_registry": self.chain_registry,
-            "nl_parse": self.parse_nl
+            "nl_parse": self.parse_nl,
         }
+
+    def news(self):
+        return self.news_scraper.fetch_latest()
