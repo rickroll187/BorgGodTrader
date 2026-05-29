@@ -1,14 +1,42 @@
 @echo off
-REM BorgGodTrader Windows Launcher
-REM Created by Chemothearpy/Eviscerate
+title BorgGodTrader - Crypto Trading Dashboard
+color 0A
 
-REM Activate venv if present
-IF EXIST venv\Scripts\activate.bat (
-    call venv\Scripts\activate.bat
+echo.
+echo  ===============================================
+echo        BorgGodTrader - Trading Dashboard
+echo  ===============================================
+echo.
+
+cd /d "%~dp0"
+
+:: Check for .env
+if not exist ".env" (
+    echo [!] No .env file found. Creating from template...
+    if exist ".env.example" (
+        copy .env.example .env
+        echo [+] Created .env - Please edit with your API keys
+    )
 )
 
-REM Launch Streamlit dashboard
-echo Launching BorgGodTrader dashboard...
-python -m streamlit run dashboard\streamlit_app.py
+:: Check for virtual environment
+if exist "venv\Scripts\activate.bat" (
+    echo [+] Activating virtual environment...
+    call venv\Scripts\activate.bat
+) else if exist ".venv\Scripts\activate.bat" (
+    echo [+] Activating virtual environment...
+    call .venv\Scripts\activate.bat
+)
+
+echo [+] Starting dashboard...
+echo [*] Dashboard will open at: http://localhost:8501
+echo.
+
+streamlit run dashboard/advanced_dashboard.py ^
+    --server.port=8501 ^
+    --server.headless=false ^
+    --browser.gatherUsageStats=false ^
+    --theme.base=dark ^
+    --theme.primaryColor=#00d4aa
 
 pause

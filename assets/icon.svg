@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1f2e"/>
+      <stop offset="100%" style="stop-color:#0e1117"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4aa"/>
+      <stop offset="100%" style="stop-color:#00ff88"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="250" fill="url(#bg)" stroke="url(#accent)" stroke-width="8"/>
+
+  <!-- Trading chart lines -->
+  <polyline points="80,350 140,300 180,320 230,200 280,250 330,150 380,180 430,100"
+            fill="none" stroke="url(#accent)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Candles -->
+  <rect x="120" y="280" width="16" height="60" fill="#00d4aa" rx="2"/>
+  <line x1="128" y1="270" x2="128" y2="350" stroke="#00d4aa" stroke-width="3"/>
+
+  <rect x="170" y="260" width="16" height="80" fill="#ff4757" rx="2"/>
+  <line x1="178" y1="250" x2="178" y2="350" stroke="#ff4757" stroke-width="3"/>
+
+  <rect x="220" y="200" width="16" height="70" fill="#00d4aa" rx="2"/>
+  <line x1="228" y1="190" x2="228" y2="280" stroke="#00d4aa" stroke-width="3"/>
+
+  <rect x="270" y="220" width="16" height="50" fill="#00d4aa" rx="2"/>
+  <line x1="278" y1="210" x2="278" y2="280" stroke="#00d4aa" stroke-width="3"/>
+
+  <rect x="320" y="150" width="16" height="60" fill="#00d4aa" rx="2"/>
+  <line x1="328" y1="140" x2="328" y2="220" stroke="#00d4aa" stroke-width="3"/>
+
+  <rect x="370" y="160" width="16" height="50" fill="#ff4757" rx="2"/>
+  <line x1="378" y1="150" x2="378" y2="220" stroke="#ff4757" stroke-width="3"/>
+
+  <!-- Borg symbol (hexagon with eye) -->
+  <polygon points="256,380 296,400 296,440 256,460 216,440 216,400"
+           fill="none" stroke="url(#accent)" stroke-width="4"/>
+  <circle cx="256" cy="420" r="15" fill="url(#accent)"/>
+  <circle cx="256" cy="420" r="6" fill="#0e1117"/>
+
+  <!-- Text -->
+  <text x="256" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#00d4aa">BORG</text>
+</svg>

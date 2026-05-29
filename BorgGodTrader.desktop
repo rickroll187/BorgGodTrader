@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BorgGodTrader
+Comment=Crypto Trading Dashboard - Multi-Chain DeFi & CEX Trading
+Exec=/home/user/BorgGodTrader/launch_borggod.sh
+Icon=/home/user/BorgGodTrader/assets/icon.svg
+Terminal=true
+Categories=Finance;Network;
+Keywords=crypto;trading;bitcoin;ethereum;defi;
+StartupNotify=true
+StartupWMClass=BorgGodTrader
