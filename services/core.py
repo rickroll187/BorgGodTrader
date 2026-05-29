@@ -57,10 +57,12 @@ class BorgCore:
         from services.tokeninfo import TokenInfoService
         from services.news.news_scraper import NewsScraper
         from services.data.data_sources import DataSources
+        from services.chains.chain_registry import ChainRegistry
 
         self.tokeninfo_service = TokenInfoService(self.rpc_url)
         self.news_scraper = NewsScraper()
         self.data_sources = DataSources()
+        self.chain_registry = ChainRegistry()
 
         # Data pipeline (optional, for advanced features)
         try:

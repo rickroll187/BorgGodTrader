@@ -22,7 +22,9 @@ def show_advanced_dashboard(core):
         "📊 Dashboard",
         "💹 Trade",
         "📈 Strategies",
+        "🧪 Backtest",
         "💼 Portfolio",
+        "🌐 Chains",
         "📜 Trade Log",
         "⚠️ Risk",
         "📰 News",
@@ -35,8 +37,12 @@ def show_advanced_dashboard(core):
         _show_trade_tab(core)
     elif menu == "📈 Strategies":
         _show_strategies_tab(core)
+    elif menu == "🧪 Backtest":
+        _show_backtest_tab(core)
     elif menu == "💼 Portfolio":
         _show_portfolio_tab(core)
+    elif menu == "🌐 Chains":
+        _show_chains_tab(core)
     elif menu == "📜 Trade Log":
         _show_logs_tab(core)
     elif menu == "⚠️ Risk":
@@ -182,6 +188,158 @@ def _show_strategies_tab(core):
                     if st.button(f"Enable {name}", key=f"enable_{name}"):
                         core.strategy_manager.enable_strategy(name)
                         st.rerun()
+
+
+def _show_backtest_tab(core):
+    """Backtesting engine UI."""
+    st.subheader("Strategy Backtester")
+
+    col1, col2, col3 = st.columns(3)
+
+    available_strategies = [
+        "ma_cross", "rsi_mean_reversion", "momentum",
+        "fear_greed_contrarian", "funding_rate", "arbitrage",
+    ]
+
+    with col1:
+        strategy_name = st.selectbox("Strategy", available_strategies)
+        symbol = st.selectbox("Symbol", ["BTC/USD", "ETH/USD", "SOL/USD", "MATIC/USD", "AVAX/USD"])
+
+    with col2:
+        interval = st.selectbox("Interval", ["1d", "4h", "1h", "1w"])
+        days = st.slider("Days of History", min_value=30, max_value=365, value=180)
+
+    with col3:
+        initial_capital = st.number_input("Starting Capital ($)", value=10000.0, step=1000.0)
+        commission = st.number_input("Commission %", value=0.1, step=0.05) / 100
+        stop_loss = st.number_input("Stop Loss %", value=0.0, step=0.5) / 100
+        take_profit = st.number_input("Take Profit %", value=0.0, step=0.5) / 100
+
+    if st.button("Run Backtest", type="primary"):
+        with st.spinner(f"Backtesting {strategy_name} on {symbol}..."):
+            try:
+                from services.backtest.runner import BacktestRunner
+
+                runner = BacktestRunner()
+                result = runner.run_strategy(
+                    strategy_name=strategy_name,
+                    symbol=symbol,
+                    interval=interval,
+                    days=days,
+                    initial_capital=initial_capital,
+                    commission_pct=commission,
+                    stop_loss_pct=stop_loss,
+                    take_profit_pct=take_profit,
+                )
+
+                # Summary metrics
+                st.divider()
+                m1, m2, m3, m4, m5 = st.columns(5)
+                m1.metric("Total Return", f"{result.total_return_pct:+.1f}%")
+                m2.metric("Max Drawdown", f"{result.max_drawdown_pct:.1f}%")
+                m3.metric("Sharpe Ratio", f"{result.sharpe_ratio:.2f}")
+                m4.metric("Win Rate", f"{result.win_rate:.0f}%")
+                m5.metric("Total Trades", result.total_trades)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Annual Return", f"{result.annualized_return_pct:+.1f}%")
+                    st.metric("Profit Factor", f"{result.profit_factor:.2f}" if result.profit_factor != float("inf") else "∞")
+                    st.metric("Expectancy", f"${result.expectancy:+.2f}/trade")
+                with col2:
+                    final = result.equity_curve[-1] if result.equity_curve else initial_capital
+                    st.metric("Final Equity", f"${final:,.2f}", f"${final - initial_capital:+,.2f}")
+                    st.metric("Sortino Ratio", f"{result.sortino_ratio:.2f}")
+                    st.metric("Calmar Ratio", f"{result.calmar_ratio:.2f}")
+
+                # Equity curve
+                if result.equity_curve:
+                    st.subheader("Equity Curve")
+                    eq_df = pd.DataFrame({
+                        "Equity": result.equity_curve,
+                        "Bar": list(range(len(result.equity_curve)))
+                    })
+                    st.line_chart(eq_df.set_index("Bar")["Equity"])
+
+                # Trade list
+                if result.trades:
+                    st.subheader(f"Trades ({result.total_trades})")
+                    trade_data = [{
+                        "Entry Bar": t.entry_time,
+                        "Exit Bar": t.exit_time,
+                        "Side": t.side,
+                        "Entry Price": f"${t.entry_price:,.2f}",
+                        "Exit Price": f"${t.exit_price:,.2f}" if t.exit_price else "-",
+                        "P&L": f"${t.pnl:+,.2f}",
+                        "P&L %": f"{t.pnl_pct * 100:+.2f}%",
+                        "Exit Reason": t.reason,
+                    } for t in result.trades[:100]]
+                    st.dataframe(pd.DataFrame(trade_data), use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Backtest failed: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+
+
+def _show_chains_tab(core):
+    """Multi-chain status and balances."""
+    st.subheader("Chain Status")
+
+    try:
+        chain_registry = getattr(core, 'chain_registry', None)
+        if not chain_registry:
+            from services.chains.chain_registry import ChainRegistry
+            chain_registry = ChainRegistry()
+
+        status = chain_registry.get_chain_status()
+
+        for chain_name, info in status.items():
+            connected = info.get("connected", False)
+            icon = "🟢" if connected else "⚪"
+            using_public = info.get("using_public_rpc", True)
+            rpc_label = "public RPC" if using_public else "configured RPC"
+
+            with st.expander(f"{icon} {info.get('name', chain_name)}", expanded=connected):
+                col1, col2, col3 = st.columns(3)
+                col1.write(f"**Chain ID:** {info.get('chain_id')}")
+                col2.write(f"**Native:** {info.get('native_token')}")
+                col3.write(f"**Block time:** {info.get('block_time')}s")
+
+                if connected:
+                    st.write(f"**Block:** {info.get('block_number', 'N/A')} | {rpc_label}")
+                else:
+                    st.write(f"Not connected ({rpc_label})")
+                    if using_public:
+                        env_vars = {
+                            "ethereum": "ETH_RPC_URL",
+                            "polygon": "POLYGON_RPC_URL",
+                            "arbitrum": "ARBITRUM_RPC_URL",
+                            "optimism": "OPTIMISM_RPC_URL",
+                            "bsc": "BSC_RPC_URL",
+                            "avalanche": "AVAX_RPC_URL",
+                            "base": "BASE_RPC_URL",
+                        }
+                        if chain_name in env_vars:
+                            st.caption(f"Set {env_vars[chain_name]} in .env for dedicated RPC")
+
+        # Wallet balance across chains
+        wallet = getattr(core, 'wallet_address', None)
+        if wallet:
+            st.divider()
+            st.subheader("Wallet Balances Across Chains")
+            if st.button("Fetch All Balances"):
+                with st.spinner("Checking all chains..."):
+                    balances = chain_registry.get_all_balances(wallet)
+                    if balances:
+                        for chain, balance in balances.items():
+                            token = chain_registry.get_native_token(chain)
+                            st.write(f"**{chain}:** {balance:.6f} {token}")
+                    else:
+                        st.info("No balances found (chains may not be connected)")
+
+    except Exception as e:
+        st.error(f"Chain status failed: {e}")
 
 
 def _show_portfolio_tab(core):
