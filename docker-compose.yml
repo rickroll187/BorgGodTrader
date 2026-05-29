@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  borggodtrader:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - TRADING_MODE=paper
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./ml_models:/app/ml_models
+    restart: unless-stopped

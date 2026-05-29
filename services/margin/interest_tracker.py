@@ -54,6 +54,18 @@ class InterestTracker:
         self._save_state()
         return {s: p["accrued_interest"] for s, p in self.positions.items()}
 
+    def get_all_interest(self):
+        """Alias for get_all_accrued for API compatibility."""
+        return self.get_all_accrued()
+
+    def start_tracking(self, symbol, amount, rate):
+        """Alias for add_position for API compatibility."""
+        self.add_position(symbol, amount, rate)
+
+    def stop_tracking(self, symbol):
+        """Alias for remove_position for API compatibility."""
+        self.remove_position(symbol)
+
     def _save_state(self):
         with open(self.state_file, "w") as f:
             json.dump(self.positions, f)
